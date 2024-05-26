@@ -61,3 +61,12 @@ class OtodomFlat:
             + f"Has {self.rooms} rooms, {self.meters}m2 and is on floor {self.floor} with URL: {self.url}."
             + f"Private: {self.private}"
         )
+
+    def __eq__(self, value: object) -> bool:
+        """Overrides the default implementation"""
+        if isinstance(value, OtodomFlat):
+            return self.url == value.url
+        return False
+
+    def to_dict(self):
+        return {"url": self.url, "price": self.rent, "street": self.street}

@@ -1,3 +1,8 @@
+import hashlib
+import json
+import os
+
+import boto3
 import requests
 import telegram
 from bs4 import BeautifulSoup
@@ -5,17 +10,33 @@ from telegram import InputMediaPhoto
 
 from objects.OtodomFlat import OtodomFlat
 
-
-def otodom_processing():
-    print("Empty method")
-
-
 TELEGRAM_TOKEN = "7190088816:AAF3_gFThTcMQOR5x64gxYIJ2CFNilev8ts"
 TELEGRAM_CHAT_ID = "-1002012368199"
+BUCKET_NAME = "scannedflatsbucket"
+AWS_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID"]
+AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
+
 
 URLS = [
     "https://www.otodom.pl/pl/wyniki/wynajem/mieszkanie/wiele-lokalizacji?distanceRadius=0&limit=10&locations=%5Bmazowieckie%2Fwarszawa%2Fwarszawa%2Fwarszawa%2Fmokotow%2Fwygledow%2Cmazowieckie%2Fwarszawa%2Fwarszawa%2Fwarszawa%2Fmokotow%2Fsluzewiec%5D&daysSinceCreated=1&by=DEFAULT&direction=DESC&viewType=listing&mapBounds=52.19724060316587%3B21.020591622073546%3B52.17713033916398%3B20.959394660101534"
 ]
+
+
+# Initialize the S3 client
+s3 = boto3.client(
+    "s3",
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+)
+
+
+def hash_url(url):
+    """Generate a SHA-256 hash of the URL."""
+    return hashlib.sha256(url.encode("utf-8")).hexdigest()
+
+
+def otodom_processing():
+    print("Empty method")
 
 
 async def send_msg(flat: OtodomFlat):
@@ -60,3 +81,26 @@ def fetch_latest():
 
             return None
     return flats[0]
+
+
+def store_flat(flat: OtodomFlat):
+    """Store flat object in S3 bucket"""
+    hash = hash_url(flat.url)
+
+    # Check if the object exists
+    try:
+        s3.head_object(Bucket=BUCKET_NAME, Key=hash)
+        print(f"Flat already exists: {flat}")
+    except s3.exceptions.ClientError as e:
+        if e.response["Error"]["Code"] == "404":
+            # Object does not exist, so upload it
+            flat_data = json.dumps(flat.to_dict())
+            s3.put_object(
+                Bucket=BUCKET_NAME,
+                Key=hash,
+                Body=flat_data,
+                ContentType="application/json",
+            )
+            print(f"Uploaded new flat: {flat}")
+        else:
+            raise
