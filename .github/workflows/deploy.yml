@@ -5,11 +5,17 @@ jobs:
     name: build and deploy lambda
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - name: zip
-        uses: montudor/action-zip@v0.1.0
-        with:
-          args: cd python/; zip -r bundle.zip .; mv bundle.zip ../; cd ..; zip bundle.zip code/* objects/* __init__.py lambda_function.py
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Create Deployment Bundle
+        run: |
+        cd python/
+        zip -r bundle.zip .
+        mv bundle.zip ..
+        cd ..
+        zip -r bundle.zip code/* objects/* __init__.py lambda_function.py
+
       - name: default deploy
         uses: appleboy/lambda-action@master
         with:
