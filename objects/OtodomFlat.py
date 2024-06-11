@@ -37,7 +37,7 @@ class OtodomFlat:
             "div", attrs={"data-testid": "advert-card-specs-list"}
         )
         self.rooms, self.meters, self.floor = [
-            re.sub(r"\D", "", info.text) for info in flat_info_div.find_all("dd")
+            re.sub(r"[^\d.]", "", info.text) for info in flat_info_div.find_all("dd")
         ]
 
         # Is it a private offer?
@@ -52,14 +52,22 @@ class OtodomFlat:
         )
         if pic_carousel:
             self.pic_urls = [pic["src"] for pic in pic_carousel.find_all("img")]
-            print(f"Found {len(self.pic_urls)} pictures for this flat")
+            # print(f"Found {len(self.pic_urls)} pictures for this flat")
         self.id = "1234"
 
     def __str__(self) -> str:
+        if self.private:
+            private_str = "Private Offer"
+        else:
+            private_str = "Agency Offer"
+
         return (
-            f"Otodom Flat - {self.id}. Price: {self.rent} + Czynsz: {self.czynsz} at: {self.street}, {self.neighbourhood}.\n"
-            + f"Has {self.rooms} rooms, {self.meters}m2 and is on floor {self.floor} with URL: {self.url}."
-            + f"Private: {self.private}"
+            f"Otodom Flat Found \nPrice: {self.rent} \nCzynsz: {self.czynsz if self.czynsz is not None else 'Unavailable'}"
+            + f"\nStreet: {self.street}, {self.neighbourhood}.\n"
+            + f"{self.rooms} room{'s' if int(self.rooms)>1 else ''} | {self.meters}m\u00b2 | floor {self.floor}.\n"
+            + private_str
+            + "\n"
+            + f"URL: {self.url}"
         )
 
     def __eq__(self, value: object) -> bool:

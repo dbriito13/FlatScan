@@ -1,9 +1,10 @@
+import asyncio
 from code import otodom
 
 
-def lambda_handler():
-    otodom.store_flat(otodom.fetch_latest())
+def lambda_handler(event, context):
+    asyncio.run(otodom.send_latest_flat())
 
 
 if __name__ == "__main__":
-    otodom.store_flat(otodom.fetch_latest())
+    asyncio.run(otodom.send_latest_flat())

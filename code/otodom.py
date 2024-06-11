@@ -6,15 +6,14 @@ import boto3
 import requests
 import telegram
 from bs4 import BeautifulSoup
-from telegram import InputMediaPhoto
 
 from objects.OtodomFlat import OtodomFlat
 
 TELEGRAM_TOKEN = "7190088816:AAF3_gFThTcMQOR5x64gxYIJ2CFNilev8ts"
 TELEGRAM_CHAT_ID = "-1002012368199"
 BUCKET_NAME = "scannedflatsbucket"
-AWS_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID"]
-AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
+AWS_ACCESS_KEY_ID = os.environ["KEY_ID"]
+AWS_SECRET_ACCESS_KEY = os.environ["ACCESS_KEY"]
 
 
 URLS = [
@@ -44,9 +43,17 @@ async def send_msg(flat: OtodomFlat):
     media_group = []
     for num in range(len(flat.pic_urls)):
         media_group.append(
-            InputMediaPhoto(flat.pic_urls[num], caption=str(flat) if num == 0 else "")
+            telegram.InputMediaPhoto(
+                flat.pic_urls[num], caption=str(flat) if num == 0 else ""
+            )
         )
     await bot.send_media_group(chat_id=TELEGRAM_CHAT_ID, media=media_group)
+
+
+async def send_latest_flat():
+    flat = store_flat(fetch_latest())
+    if flat is not None:
+        await send_msg(flat)
 
 
 def fetch_latest():
@@ -91,6 +98,7 @@ def store_flat(flat: OtodomFlat):
     try:
         s3.head_object(Bucket=BUCKET_NAME, Key=hash)
         print(f"Flat already exists: {flat}")
+        return None
     except s3.exceptions.ClientError as e:
         if e.response["Error"]["Code"] == "404":
             # Object does not exist, so upload it
@@ -102,5 +110,6 @@ def store_flat(flat: OtodomFlat):
                 ContentType="application/json",
             )
             print(f"Uploaded new flat: {flat}")
+            return flat
         else:
             raise
