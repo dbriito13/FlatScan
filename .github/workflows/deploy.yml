@@ -10,11 +10,11 @@ jobs:
 
       - name: Create Deployment Bundle
         run: |
-        cd python/
-        zip -r bundle.zip .
-        mv bundle.zip ..
-        cd ..
-        zip -r bundle.zip code/* objects/* __init__.py lambda_function.py
+          cd python/
+          zip -r bundle.zip .
+          mv bundle.zip ..
+          cd ..
+          zip -r bundle.zip code/* objects/* __init__.py lambda_function.py
 
       - name: default deploy
         uses: appleboy/lambda-action@master
