@@ -9,15 +9,30 @@ from bs4 import BeautifulSoup
 
 from objects.OtodomFlat import OtodomFlat
 
-TELEGRAM_TOKEN = "7190088816:AAF3_gFThTcMQOR5x64gxYIJ2CFNilev8ts"
-TELEGRAM_CHAT_ID = "-1002012368199"
-BUCKET_NAME = "scannedflatsbucket"
+TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
+TELEGRAM_CHAT_ID = os.environ["CHAT_ID"]
+BUCKET_NAME = os.environ["BUCKET_NAME"]
 AWS_ACCESS_KEY_ID = os.environ["KEY_ID"]
 AWS_SECRET_ACCESS_KEY = os.environ["ACCESS_KEY"]
 
 
 URLS = [
-    "https://www.otodom.pl/pl/wyniki/wynajem/mieszkanie/wiele-lokalizacji?distanceRadius=0&limit=10&locations=%5Bmazowieckie%2Fwarszawa%2Fwarszawa%2Fwarszawa%2Fmokotow%2Fwygledow%2Cmazowieckie%2Fwarszawa%2Fwarszawa%2Fwarszawa%2Fmokotow%2Fsluzewiec%5D&daysSinceCreated=1&by=DEFAULT&direction=DESC&viewType=listing&mapBounds=52.19724060316587%3B21.020591622073546%3B52.17713033916398%3B20.959394660101534"
+    (
+        "Sluzewiec",
+        "https://www.otodom.pl/pl/wyniki/wynajem/mieszkanie,2-pokoje/mazowieckie/warszawa/warszawa/warszawa/mokotow/sluzewiec",
+    ),
+    (
+        "Wygledow",
+        "https://www.otodom.pl/pl/wyniki/wynajem/mieszkanie,2-pokoje/mazowieckie/warszawa/warszawa/warszawa/mokotow/wygledow",
+    ),
+    (
+        "Ksawerow",
+        "https://www.otodom.pl/pl/wyniki/wynajem/mieszkanie%2C2-pokoje/mazowieckie/warszawa/warszawa/warszawa/mokotow/ksawerow",
+    ),
+    (
+        "Czyste",
+        "https://www.otodom.pl/pl/wyniki/wynajem/mieszkanie%2C2-pokoje/mazowieckie/warszawa/warszawa/warszawa/wola/czyste",
+    ),
 ]
 
 
@@ -50,21 +65,28 @@ async def send_msg(flat: OtodomFlat):
     await bot.send_media_group(chat_id=TELEGRAM_CHAT_ID, media=media_group)
 
 
-async def send_latest_flat():
-    flat = store_flat(fetch_latest())
-    if flat is not None:
-        await send_msg(flat)
+async def send_latest_flats(test=False):
+    flats = fetch_latest()
+    for flat in flats:
+        print(flat)
+        if test is False:
+            flat = store_flat(flat)
+        if flat is not None:
+            try:
+                await send_msg(flat)
+            except telegram.error.TimedOut:
+                print("Timed out, moving to next flat...")
 
 
 def fetch_latest():
-    for url in URLS:
+    flats = []
+    for neigh, url in URLS:
         # Send a GET request to the URL
         headers = {
             "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/117.0"
         }
 
         response = requests.get(url, headers=headers)
-        flats = []
 
         # Check if the request was successful (status code 200)
         if response.status_code == 200:
@@ -76,8 +98,7 @@ def fetch_latest():
                 # Find all <li> elements under the current <ul> element
                 li_elements = ul_element.find_all("li")
                 for li in [li_elements[0]]:
-                    otodomFlat = OtodomFlat(li.find("article"))
-                    print(otodomFlat)
+                    otodomFlat = OtodomFlat(li.find("article"), neigh)
                     flats.append(otodomFlat)
 
         else:
@@ -87,7 +108,7 @@ def fetch_latest():
             )
 
             return None
-    return flats[0]
+    return flats
 
 
 def store_flat(flat: OtodomFlat):

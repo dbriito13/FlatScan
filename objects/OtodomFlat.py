@@ -10,48 +10,38 @@ class OtodomFlat:
             return (numbers[0], numbers[1])
         return (numbers[0], None)
 
-    def __init__(self, article_data) -> None:
+    def __init__(self, article_data, area) -> None:
         # Extract Flat Offer data from article_data
         self.url = "https://www.otodom.pl" + article_data.find("a")["href"]
 
-        # Get Price for listing
-        price_div = article_data.find(
-            "div", attrs={"data-testid": "listing-item-header"}
-        )
-        if price_div:
-            # print(price_div.prettify())
-            price_font = price_div.find("span").text
-            self.rent, self.czynsz = self.__separate_price(price_font)
+        # Get Text for price, address and other data
+        section = article_data.find("section")
 
-        # Get Address
-        address_p = article_data.find(
-            "p", attrs={"data-testid": "advert-card-address"}
-        ).text
-        if address_p:
-            self.street, self.neighbourhood = [
-                part.strip() for part in address_p.split(",")
-            ][0:2]
-
-        # Get Flat Info (number of rooms, floor, sq meters)
-        flat_info_div = article_data.find(
-            "div", attrs={"data-testid": "advert-card-specs-list"}
+        info_list = (
+            section.find_all("div", recursive=False)[1].get_text("<sep>").split("<sep>")
         )
-        self.rooms, self.meters, self.floor = [
-            re.sub(r"[^\d.]", "", info.text) for info in flat_info_div.find_all("dd")
-        ]
+        for i in range(len(info_list)):
+            print(f"Number {i}: {info_list[i]}")
 
-        # Is it a private offer?
-        private = article_data.find(
-            "div", attrs={"data-testid": "listing-item-owner-name"}
-        )
-        self.private = False if private else True
+        if "czynsz" in info_list[2]:
+            self.rent, self.czynsz = self.__separate_price(
+                info_list[0] + info_list[1] + info_list[2]
+            )
+            indexes = [4, 6, 8, 12, -1]
+        else:
+            self.rent = info_list[0].replace("zł", "")
+            self.czynsz = None
+            indexes = [2, 4, 6, 10, 13]
 
-        # Get a maximum of 5 images from the offer to include in message
-        pic_carousel = article_data.find(
-            "div", attrs={"data-testid": "carousel-container"}
-        )
-        if pic_carousel:
-            self.pic_urls = [pic["src"] for pic in pic_carousel.find_all("img")]
+        self.area = area
+        self.street, self.neighbourhood = info_list[indexes[0]].split(",")[0:2]
+        self.rooms = re.sub(r"[^\d.]", "", info_list[indexes[1]])
+        self.meters = re.sub(r"[^\d.]", "", info_list[indexes[2]])
+        self.floor = re.sub(r"[^\d.]", "", info_list[indexes[3]])
+        self.private = True if info_list[indexes[4]] == "Oferta prywatna" else False
+
+        if section:
+            self.pic_urls = [pic["src"] for pic in section.find_all("img")]
             # print(f"Found {len(self.pic_urls)} pictures for this flat")
         self.id = "1234"
 
@@ -62,7 +52,7 @@ class OtodomFlat:
             private_str = "Agency Offer"
 
         return (
-            f"Otodom Flat Found \nPrice: {self.rent} \nCzynsz: {self.czynsz if self.czynsz is not None else 'Unavailable'}"
+            f" Flat - {self.area} \nPrice: {self.rent} \nCzynsz: {self.czynsz if self.czynsz is not None else 'Unavailable'}"
             + f"\nStreet: {self.street}, {self.neighbourhood}.\n"
             + f"{self.rooms} room{'s' if int(self.rooms)>1 else ''} | {self.meters}m\u00b2 | floor {self.floor}.\n"
             + private_str
