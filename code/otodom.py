@@ -18,20 +18,12 @@ AWS_SECRET_ACCESS_KEY = os.environ["ACCESS_KEY"]
 
 URLS = [
     (
-        "Sluzewiec",
-        "https://www.otodom.pl/pl/wyniki/wynajem/mieszkanie,2-pokoje/mazowieckie/warszawa/warszawa/warszawa/mokotow/sluzewiec",
+        "Mokotow",
+        "https://www.otodom.pl/pl/wyniki/wynajem/mieszkanie/mazowieckie/warszawa/warszawa/warszawa/mokotow?limit=36&priceMax=4500&by=DEFAULT&direction=DESC&viewType=listing",
     ),
     (
-        "Wygledow",
-        "https://www.otodom.pl/pl/wyniki/wynajem/mieszkanie,2-pokoje/mazowieckie/warszawa/warszawa/warszawa/mokotow/wygledow",
-    ),
-    (
-        "Ksawerow",
-        "https://www.otodom.pl/pl/wyniki/wynajem/mieszkanie%2C2-pokoje/mazowieckie/warszawa/warszawa/warszawa/mokotow/ksawerow",
-    ),
-    (
-        "Czyste",
-        "https://www.otodom.pl/pl/wyniki/wynajem/mieszkanie%2C2-pokoje/mazowieckie/warszawa/warszawa/warszawa/wola/czyste",
+        "Wola",
+        "https://www.otodom.pl/pl/wyniki/wynajem/mieszkanie/mazowieckie/warszawa/warszawa/warszawa/wola?limit=36&priceMax=4500&by=DEFAULT&direction=DESC&viewType=listing",
     ),
 ]
 
